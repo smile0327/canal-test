@@ -6,7 +6,7 @@ import com.alibaba.otter.canal.client.CanalConnectors;
 /**
  * @Auther: kevin
  * @Description:
- * @Company: 上海博般数据技术有限公司
+ * @Company: 
  * @Version: 1.0.0
  * @Date: Created in 11:05 2018/6/28
  * @ProjectName: canal
