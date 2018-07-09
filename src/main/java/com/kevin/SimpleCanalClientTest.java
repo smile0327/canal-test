@@ -8,7 +8,7 @@ import java.net.InetSocketAddress;
 /**
  * @Auther: kevin
  * @Description:
- * @Company: 上海博般数据技术有限公司
+ * @Company: 
  * @Version: 1.0.0
  * @Date: Created in 10:36 2018/6/27
  * @ProjectName: SimpleCanalClientTest
