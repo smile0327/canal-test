@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @Auther: kevin
  * @Description:
- * @Company: 上海博般数据技术有限公司
+ * @Company: 
  * @Version: 1.0.0
  * @Date: Created in 15:44 2018/6/28
  * @ProjectName: canal
