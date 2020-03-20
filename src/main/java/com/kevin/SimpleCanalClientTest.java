@@ -17,9 +17,9 @@ public class SimpleCanalClientTest extends AbstractCanalClientTest{
 
     public static void main(String args[]) {
         String destination = "example";
-        String filter = "test\\.user";
+        String filter = "tpg\\..*";
         //canal的地址
-        String ip = "192.168.133.131";
+        String ip = "10.172.246.234";
         //canal的端口号   canal.properties中配置
         int port = 11111;
         // 创建链接

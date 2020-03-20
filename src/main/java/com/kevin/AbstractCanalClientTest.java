@@ -3,7 +3,10 @@ package com.kevin;
 import com.alibaba.otter.canal.client.CanalConnector;
 import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.Message;
+import com.alibaba.otter.canal.protocol.exception.CanalClientException;
+import com.kevin.util.MysqlSqlTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,20 +41,24 @@ public class AbstractCanalClientTest {
                 Message message = connector.getWithoutAck(batchSize); // 获取指定数量的数据
                 long batchId = message.getId();
                 int size = message.getEntries().size();
-                if (batchId == -1 || size == 0) {
-                    emptyCount++;
-                    System.out.println("empty count : " + emptyCount);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                try {
+                    if (batchId == -1 || size == 0) {
+                        emptyCount++;
+//                        System.out.println("empty count : " + emptyCount);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        emptyCount = 0;
+                        printEntry(message.getEntries());
                     }
-                } else {
-                    emptyCount = 0;
-                    printEntry(message.getEntries());
+                    connector.ack(batchId); // 提交确认
+                } catch (CanalClientException e) {
+                    connector.rollback(batchId); // 处理失败, 回滚数据
+                    e.printStackTrace();
                 }
-                connector.ack(batchId); // 提交确认
-                // connector.rollback(batchId); // 处理失败, 回滚数据
             }
             System.out.println("empty too many times, exit");
         } finally {
@@ -79,15 +86,22 @@ public class AbstractCanalClientTest {
                     entry.getHeader().getSchemaName(), entry.getHeader().getTableName(),
                     eventType));
             for (CanalEntry.RowData rowData : rowChage.getRowDatasList()) {
-                if (eventType == CanalEntry.EventType.DELETE) {
-                    printColumn(rowData.getBeforeColumnsList());
-                } else if (eventType == CanalEntry.EventType.INSERT) {
-                    printColumn(rowData.getAfterColumnsList());
-                } else {
-                    System.out.println("-------> before");
-                    printColumn(rowData.getBeforeColumnsList());
-                    System.out.println("-------> after");
-                    printColumn(rowData.getAfterColumnsList());
+                switch (eventType){
+                    case INSERT:
+                        printColumn(rowData.getAfterColumnsList());
+                        showSql(entry.getHeader() , rowData.getAfterColumnsList());
+                        break;
+                    case UPDATE:
+                        System.out.println("-------> before");
+                        printColumn(rowData.getBeforeColumnsList());
+                        System.out.println("-------> after");
+                        printColumn(rowData.getAfterColumnsList());
+                        showSql(entry.getHeader() , rowData.getBeforeColumnsList());
+                        break;
+                    case DELETE:
+                        printColumn(rowData.getBeforeColumnsList());
+                        showSql(entry.getHeader() , rowData.getBeforeColumnsList());
+                        break;
                 }
             }
         }
@@ -97,6 +111,36 @@ public class AbstractCanalClientTest {
         for (CanalEntry.Column column : columns) {
             System.out.println(column.getName() + " : " + column.getValue() + "    update=" + column.getUpdated());
         }
+    }
+
+    private static void showSql(CanalEntry.Header header, List<CanalEntry.Column> columns) {
+        List<String> pkNames = new ArrayList<>();
+        List<String> colNames = new ArrayList<>();
+        List<Object> pkValues = new ArrayList<>();
+        List<Object> colValues = new ArrayList<>();
+        for (CanalEntry.Column column : columns) {
+            if (column.getIsKey()) {
+                pkNames.add(column.getName());
+                pkValues.add(column.getValue());
+            } else {
+                colNames.add(column.getName());
+                colValues.add(column.getValue());
+            }
+        }
+        String sql = "";
+        CanalEntry.EventType eventType = header.getEventType();
+        MysqlSqlTemplate sqlTemplate = new MysqlSqlTemplate();
+        switch (eventType) {
+            case INSERT:
+                sql = sqlTemplate.getInsertSql(header.getSchemaName(), header.getTableName(), pkNames.toArray(new String[]{}), colNames.toArray(new String[]{}), pkValues.toArray(), colValues.toArray());
+                break;
+            case UPDATE:
+                sql = sqlTemplate.getUpdateSql(header.getSchemaName(), header.getTableName(), pkNames.toArray(new String[]{}), colNames.toArray(new String[]{}), pkValues.toArray(), colValues.toArray());
+                break;
+            case DELETE:
+                sql = sqlTemplate.getDeleteSql(header.getSchemaName(), header.getTableName(), pkNames.toArray(new String[]{}), pkValues.toArray());
+        }
+        System.out.println(sql);
     }
 
 }
