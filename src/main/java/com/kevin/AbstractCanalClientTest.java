@@ -5,6 +5,7 @@ import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.Message;
 import com.alibaba.otter.canal.protocol.exception.CanalClientException;
 import com.kevin.util.MysqlSqlTemplate;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,6 @@ public class AbstractCanalClientTest {
                 try {
                     if (batchId == -1 || size == 0) {
                         emptyCount++;
-//                        System.out.println("empty count : " + emptyCount);
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -96,7 +96,7 @@ public class AbstractCanalClientTest {
                         printColumn(rowData.getBeforeColumnsList());
                         System.out.println("-------> after");
                         printColumn(rowData.getAfterColumnsList());
-                        showSql(entry.getHeader() , rowData.getBeforeColumnsList());
+                        showSql(entry.getHeader() , rowData.getAfterColumnsList());
                         break;
                     case DELETE:
                         printColumn(rowData.getBeforeColumnsList());
@@ -118,11 +118,12 @@ public class AbstractCanalClientTest {
         List<String> colNames = new ArrayList<>();
         List<Object> pkValues = new ArrayList<>();
         List<Object> colValues = new ArrayList<>();
+        //如果是insert每个字段都更新了，但是有些字段没有值，需要处理
         for (CanalEntry.Column column : columns) {
             if (column.getIsKey()) {
                 pkNames.add(column.getName());
                 pkValues.add(column.getValue());
-            } else {
+            } else if (column.getUpdated() && StringUtils.isNotEmpty(column.getValue())){
                 colNames.add(column.getName());
                 colValues.add(column.getValue());
             }

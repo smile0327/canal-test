@@ -103,7 +103,7 @@ public abstract class AbstractSqlTemplate implements SqlTemplate {
     protected void appendColumnValues(StringBuilder sql , Object[] values){
         int size = values.length;
         for (int i = 0; i < size; i++) {
-            sql.append(values[i]).append((i + 1 < size) ? " , " : "");
+            sql.append("'").append(values[i]).append("'").append((i + 1 < size) ? " , " : "");
         }
     }
 
@@ -120,7 +120,7 @@ public abstract class AbstractSqlTemplate implements SqlTemplate {
     private void appendColumnEqualValues(StringBuilder sql, String[] columns, Object[] values, String separator){
         int size = columns.length;
         for (int i = 0; i < size; i++) {
-            sql.append(" ").append(appendEscape(columns[i])).append(" = ").append(values[i]);
+            sql.append(" ").append(appendEscape(columns[i])).append(" = ").append("'").append(values[i]).append("'");
             if (i != size - 1) {
                 sql.append(separator);
             }
